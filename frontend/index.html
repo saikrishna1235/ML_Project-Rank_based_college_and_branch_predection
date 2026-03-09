@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<title>TS EAMCET Smart Predictor</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+font-family:"Segoe UI",Arial;
+margin:0;
+background:#f4f6f9;
+}
+canvas{
+max-height:350px;
+}
+/* HEADER */
+
+header{
+background:#0a6ed1;
+color:white;
+padding:15px;
+font-size:22px;
+font-weight:600;
+text-align:center;
+}
+
+/* LAYOUT */
+
+.container{
+display:flex;
+gap:30px;
+justify-content:center;
+margin-top:30px;
+flex-wrap:wrap;
+}
+
+/* CARDS */
+
+.card{
+background:white;
+width:420px;
+padding:25px;
+border-radius:10px;
+box-shadow:0 4px 15px rgba(0,0,0,0.15);
+}
+
+.card h3{
+margin-top:0;
+border-bottom:1px solid #ddd;
+padding-bottom:8px;
+}
+
+/* INPUTS */
+
+input,select{
+width:100%;
+padding:10px;
+margin:8px 0;
+border-radius:6px;
+border:1px solid #ccc;
+font-size:14px;
+}
+
+/* BUTTON */
+
+button{
+width:100%;
+padding:12px;
+background:#0a6ed1;
+color:white;
+border:none;
+border-radius:6px;
+font-size:15px;
+cursor:pointer;
+}
+
+button:hover{
+background:#0854a0;
+}
+
+/* RESULT CARDS */
+
+.result-card{
+background:#eef4ff;
+padding:12px;
+margin-top:10px;
+border-radius:6px;
+}
+
+/* TAGS */
+
+.safe{
+color:green;
+font-weight:bold;
+}
+
+.target{
+color:#ff9900;
+font-weight:bold;
+}
+
+.dream{
+color:red;
+font-weight:bold;
+}
+
+/* ANALYTICS */
+
+.analytics-box{
+background:#f8f9fc;
+padding:10px;
+margin-top:10px;
+border-radius:6px;
+}
+
+/* POPUP */
+
+#trendPopup{
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.6);
+justify-content:center;
+align-items:center;
+z-index:1000;
+}
+
+#trendPopupContent{
+background:white;
+padding:20px;
+border-radius:8px;
+width:600px;
+max-width:90%;
+}
+
+</style>
+
+</head>
+
+<body>
+<div id="comparePopup" style="
+display:none;
+position:fixed;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+background:white;
+padding:25px;
+border-radius:10px;
+box-shadow:0 5px 25px rgba(0,0,0,0.3);
+width:600px;
+z-index:1000;
+">
+
+<h3>College Comparison</h3>
+
+<div id="compareResult"></div>
+
+<canvas id="compareChart"></canvas>
+
+<br>
+<button onclick="closeCompare()">Close</button>
+
+</div>
+<header>TS EAMCET Smart College Predictor</header>
+
+<div class="container">
+<!-- PREDICTION CARD -->
+
+<div class="card">
+
+<h3>College Prediction</h3>
+<input id="collegeSearch"
+placeholder="Search College..."
+oninput="suggestColleges()">
+<button onclick="searchCollege()">Search</button>
+
+<div id="suggestions"
+style="background:white;border:1px solid #ccc;"></div>
+
+<input id="rank" placeholder="Enter EAMCET Rank">
+
+
+<select id="gender">
+<option value="M">Male</option>
+<option value="F">Female</option>
+</select>
+
+<select id="category">
+<option value="OC">OC</option>
+<option value="BC_A">BC_A</option>
+<option value="BC_B">BC_B</option>
+<option value="BC_C">BC_C</option>
+<option value="BC_D">BC_D</option>
+<option value="BC_E">BC_E</option>
+<option value="SC">SC</option>
+<option value="ST">ST</option>
+</select>
+
+<select id="region">
+<option value="OU">OU Region</option>
+<option value="AU">AU Region</option>
+<option value="SVU">SVU Region</option>
+<option value="NL">Non Local</option>
+</select>
+
+<button onclick="predict()">Predict Colleges</button>
+<h1></h1>
+
+<div id="counselingResult"></div>
+<h1></h1>
+<h3>College Compare</h3>
+
+<select id="college1">
+<option value="">Select College 1</option>
+</select>
+
+<select id="college2">
+<option value="">Select College 2</option>
+</select>
+
+<button onclick="compareColleges()">Compare</button>
+
+
+
+<div id="results"></div>
+
+<!-- Trend Graph (kept original, not removed) -->
+
+<div style="margin-top:20px">
+<canvas id="trendChart"></canvas>
+</div>
+
+</div>
+
+<!-- ANALYTICS CARD -->
+
+<div class="card">
+
+<h3>Dataset Insights</h3>
+
+<div id="insights"></div>
+
+</div>
+
+</div>
+
+
+<!-- POPUP TREND GRAPH -->
+
+<div id="trendPopup">
+
+<div id="trendPopupContent">
+
+<div style="display:flex;justify-content:space-between;align-items:center;">
+<h3>College Cutoff Trend</h3>
+<button onclick="closeTrend()" style="background:red;color:white;border:none;padding:5px 10px;border-radius:4px;">X</button>
+</div>
+
+<canvas id="trendChartPopup"></canvas>
+
+</div>
+
+</div>
+
+<script>
+
+let chart = null;
+
+/* PREDICTION */
+
+async function predict(){
+
+let rank=document.getElementById("rank").value;
+let gender=document.getElementById("gender").value;
+let category=document.getElementById("category").value;
+let region=document.getElementById("region").value;
+
+let response = await fetch("http://127.0.0.1:8000/predict",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+rank:parseInt(rank),
+gender:gender,
+category:category,
+region:region
+})
+});
+
+let data = await response.json();
+
+let html = "<h3>Predicted Colleges</h3>";
+
+/* Top ML predictions */
+
+data.predicted.forEach(p => {
+
+html += `
+<div class="result-card">
+<b onclick="showTrend('${p.college_branch}')"
+style="cursor:pointer;color:#0a6ed1">
+${p.college_branch}
+</b><br>
+Chance: ${Math.round(p.probability*100)}%<br>
+<span class="${p.category.toLowerCase()}">${p.category}</span>
+</div>
+`;
+
+});
+
+/* All possible colleges */
+
+html += "<h3>All Possible Colleges</h3>";
+
+data.possible.forEach(c => {
+
+html += `
+<div class="result-card">
+${c}
+</div>
+`;
+
+});
+
+document.getElementById("results").innerHTML = html;
+
+}
+
+/* LOAD ANALYTICS */
+
+async function loadInsights(){
+
+let response=await fetch("http://127.0.0.1:8000/insights");
+let data=await response.json();
+
+let html=`
+
+<div class="analytics-box">
+Total Colleges: <b>${data.total_colleges}</b>
+</div>
+
+<div class="analytics-box">
+Total Branches: <b>${data.total_branches}</b>
+</div>
+
+<div class="analytics-box">
+Dataset Records: <b>${data.records}</b>
+</div>
+
+<br>
+<b>Top Branches</b><br>
+`;
+
+for(let branch in data.top_branches){
+html+=`
+<div class="analytics-box">
+${branch} : ${data.top_branches[branch]}
+</div>
+`;
+}
+
+document.getElementById("insights").innerHTML=html;
+
+}
+
+/* TREND GRAPH */
+
+async function showTrend(college_branch){
+
+document.getElementById("trendPopup").style.display="flex";
+
+let parts = college_branch.split("-");
+
+let college = parts[0].trim();
+let branch = parts[1].trim();
+
+let response = await fetch(
+`http://127.0.0.1:8000/trend?college=${college}&branch=${branch}`
+);
+
+let data = await response.json();
+
+let years = data.map(x => x.Year);
+let ranks = data.map(x => x.Rank);
+
+const ctx = document.getElementById("trendChartPopup");
+
+if(chart){
+chart.destroy();
+}
+
+chart = new Chart(ctx, {
+type: "line",
+data: {
+labels: years,
+datasets: [{
+label: "Closing Rank Trend",
+data: ranks,
+borderColor: "#0a6ed1",
+backgroundColor: "rgba(10,110,209,0.2)",
+fill: true,
+tension: 0.3
+}]
+},
+options:{
+responsive:true,
+plugins:{
+legend:{
+position:"top"
+}
+},
+scales:{
+y:{
+reverse:true,
+title:{
+display:true,
+text:"Closing Rank"
+}
+},
+x:{
+title:{
+display:true,
+text:"Year"
+}
+}
+},
+elements:{
+point:{
+radius:4
+}
+}
+}
+});
+
+}
+async function searchCollege(){
+
+let college=document.getElementById("collegeSearch").value.trim()
+
+if(college===""){
+alert("Enter college name")
+return
+}
+
+let response=await fetch(
+`http://127.0.0.1:8000/college_search?college=${college}`
+)
+
+let data=await response.json()
+
+document.getElementById("explorerPopup").style.display="flex"
+document.getElementById("explorerTitle").innerText=college
+
+/* ---------- Collect Branches ---------- */
+
+let branches=[...new Set(data.map(d=>d.Branch))].sort()
+
+/* ---------- Collect Years ---------- */
+
+let years=[...new Set(data.map(d=>d.Year))].sort()
+
+/* ---------- Create Branch Section ---------- */
+
+let html="<h3>Branches</h3>"
+html+=branches.join(" | ")
+
+html+="<h3 style='margin-top:20px'>Cutoff Table</h3>"
+
+/* ---------- Build Table ---------- */
+
+html+=`<table border="1" style="border-collapse:collapse;width:100%;text-align:center">
+<tr>
+<th>Branch</th>
+`
+
+years.forEach(y=>{
+html+=`<th>${y}</th>`
+})
+
+html+="</tr>"
+
+/* ---------- Fill Table Rows ---------- */
+
+branches.forEach(branch=>{
+
+html+=`<tr><td><b>${branch}</b></td>`
+
+years.forEach(year=>{
+
+let row=data.find(d=>d.Branch===branch && d.Year===year)
+
+if(row){
+html+=`<td>${row.Rank}</td>`
+}else{
+html+=`<td>-</td>`
+}
+
+})
+
+html+="</tr>"
+
+})
+
+html+="</table>"
+
+/* ---------- Graph ---------- */
+
+html+=`<h3 style="margin-top:20px">Trend Graph</h3>
+<canvas id="explorerTrend"></canvas>`
+
+document.getElementById("explorerContent").innerHTML=html
+
+/* ---------- Prepare Graph Data ---------- */
+
+let trendData=years.map(y=>{
+let yearRanks=data.filter(d=>d.Year===y).map(r=>r.Rank)
+return Math.max(...yearRanks)
+})
+
+/* ---------- Draw Chart ---------- */
+
+new Chart(
+document.getElementById("explorerTrend"),
+{
+type:"line",
+data:{
+labels:years,
+datasets:[{
+label:"Closing Rank",
+data:trendData,
+borderColor:"#0a6ed1",
+backgroundColor:"rgba(10,110,209,0.2)",
+fill:true,
+tension:0.3
+}]
+},
+options:{
+responsive:true,
+scales:{
+y:{reverse:true}
+}
+}
+}
+)
+
+}
+function closeTrend(){
+document.getElementById("trendPopup").style.display="none";
+}
+async function suggestColleges(){
+
+let query=document.getElementById("collegeSearch").value.trim()
+
+if(query.length<2){
+document.getElementById("suggestions").innerHTML=""
+return
+}
+
+let response=await fetch(
+`http://127.0.0.1:8000/college_suggestions?query=${query}`
+)
+
+let data=await response.json()
+
+let html=""
+
+data.forEach(college=>{
+
+html+=`
+<div style="
+padding:8px;
+cursor:pointer;
+border-bottom:1px solid #eee;
+"
+onclick="selectCollege('${college}')">
+${college}
+</div>
+`
+
+})
+
+document.getElementById("suggestions").innerHTML=html
+}
+function selectCollege(name){
+
+document.getElementById("collegeSearch").value=name
+
+document.getElementById("suggestions").innerHTML=""
+
+searchCollege(name)
+
+}
+function closeExplorer(){
+document.getElementById("explorerPopup").style.display="none"
+}
+let compareChart=null;
+
+async function compareColleges(){
+
+let college1=document.getElementById("college1").value;
+let college2=document.getElementById("college2").value;
+
+if(!college1 || !college2){
+alert("Select both colleges");
+return;
+}
+
+let response=await fetch(
+`http://127.0.0.1:8000/compare?college1=${encodeURIComponent(college1)}&college2=${encodeURIComponent(college2)}`
+);
+
+let data=await response.json();
+
+/* OPEN POPUP */
+
+document.getElementById("comparePopup").style.display="block";
+
+let html=`
+
+<h4>${data.college1.college}</h4>
+Branches: ${data.college1.branches.join(" | ")}
+
+<br><br>
+
+<h4>${data.college2.college}</h4>
+Branches: ${data.college2.branches.join(" | ")}
+
+`;
+
+document.getElementById("compareResult").innerHTML=html;
+
+let years=data.college1.trend.map(x=>x.Year);
+
+let ranks1=data.college1.trend.map(x=>x.Rank);
+let ranks2=data.college2.trend.map(x=>x.Rank);
+
+const ctx=document.getElementById("compareChart");
+
+if(compareChart){
+compareChart.destroy();
+}
+
+compareChart=new Chart(ctx,{
+type:"line",
+data:{
+labels:years,
+datasets:[
+{
+label:data.college1.college,
+data:ranks1,
+borderColor:"blue",
+fill:false
+},
+{
+label:data.college2.college,
+data:ranks2,
+borderColor:"red",
+fill:false
+}
+]
+},
+options:{
+scales:{
+y:{reverse:true}
+}
+}
+});
+
+}
+async function loadColleges(){
+
+let response=await fetch("http://127.0.0.1:8000/college_list");
+let data=await response.json();
+
+let html="";
+
+data.forEach(c=>{
+html+=`<option value="${c}">${c}</option>`;
+});
+
+document.getElementById("college1").innerHTML+=html;
+document.getElementById("college2").innerHTML+=html;
+
+}
+function closeCompare(){
+document.getElementById("comparePopup").style.display="none";
+}
+window.onclick=function(e){
+if(e.target==document.getElementById("comparePopup")){
+closeCompare();
+}
+}
+async function generateCounseling(){
+
+let rank=document.getElementById("rank").value;
+let gender=document.getElementById("gender").value;
+let category=document.getElementById("category").value;
+let region=document.getElementById("region").value;
+
+let response = await fetch("http://127.0.0.1:8000/counseling_list",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+rank:parseInt(rank),
+gender:gender,
+category:category,
+region:region
+})
+});
+
+let data = await response.json();
+
+let html="<h3>Counseling List</h3>";
+
+data.list.forEach(c=>{
+html+=`
+<div class="result-card">
+${c.college}
+</div>
+`;
+});
+
+document.getElementById("results").innerHTML=html;
+
+}
+loadColleges();
+loadInsights()
+
+</script>
+<!-- College Explorer Popup -->
+
+<div id="explorerPopup" style="
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.6);
+justify-content:center;
+align-items:center;
+z-index:999;
+">
+
+<div style="
+background:white;
+padding:20px;
+border-radius:8px;
+width:800px;
+max-width:95%;
+max-height:90%;
+overflow:auto;
+">
+
+<div style="display:flex;justify-content:space-between;">
+<h2 id="explorerTitle"></h2>
+<button onclick="closeExplorer()" style="
+background:red;
+color:white;
+border:none;
+padding:5px 10px;
+border-radius:4px;
+cursor:pointer;
+">X</button>
+</div>
+
+<div id="explorerContent"></div>
+
+</div>
+
+</div>
+</body>
+</html>

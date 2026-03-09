@@ -1,0 +1,19 @@
+# Models
+*.pkl
+*.joblib
+*.h5
+*.pt
+*.pth
+model/
+
+# Dataset
+dataset/
+Data_collection/*.csv
+Data_collection/*.json
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Progress files
+*.txt
