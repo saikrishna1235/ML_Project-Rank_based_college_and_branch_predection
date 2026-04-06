@@ -6,14 +6,21 @@
 *.pth
 model/
 
-# Dataset
+# Data
 dataset/
-Data_collection/*.csv
-Data_collection/*.json
+Data_collection/
+*.csv
+*.json
 
-# Python cache
+# Python
 __pycache__/
 *.pyc
 
-# Progress files
+# Logs / temp
 *.txt
+*.log
+
+# OS / editor
+.DS_Store
+.vscode/
+.env
