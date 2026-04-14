@@ -3,6 +3,7 @@
 <html>
 
 <head>
+    
 <title>TS EAMCET Smart Predictor</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -11,40 +12,48 @@
 body{
 font-family:"Segoe UI",Arial;
 margin:0;
-background:#f4f6f9;
+background:linear-gradient(135deg,#e3f2fd,#f4f6f9);
 }
-canvas{
-max-height:350px;
-}
-/* HEADER */
 
+/* HEADER */
 header{
-background:#0a6ed1;
+background:linear-gradient(90deg,#0a6ed1,#0854a0);
 color:white;
-padding:15px;
-font-size:22px;
+padding:18px;
+font-size:24px;
 font-weight:600;
 text-align:center;
+letter-spacing:1px;
+box-shadow:0 2px 10px rgba(0,0,0,0.2);
 }
 
-/* LAYOUT */
-
+/* GRID */
 .container{
-display:flex;
-gap:30px;
-justify-content:center;
-margin-top:30px;
-flex-wrap:wrap;
+display:grid;
+grid-template-columns: 1fr 1fr 1fr;
+gap:25px;
+padding:25px;
 }
 
-/* CARDS */
+@media(max-width:1000px){
+.container{
+grid-template-columns:1fr;
+}
+}
 
+/* GLASS CARD */
 .card{
-background:white;
-width:420px;
-padding:25px;
-border-radius:10px;
-box-shadow:0 4px 15px rgba(0,0,0,0.15);
+background:rgba(255,255,255,0.7);
+backdrop-filter:blur(12px);
+border-radius:15px;
+padding:20px;
+box-shadow:0 8px 25px rgba(0,0,0,0.1);
+transition:0.3s;
+}
+
+.card:hover{
+transform:translateY(-5px);
+box-shadow:0 12px 30px rgba(0,0,0,0.15);
 }
 
 .card h3{
@@ -54,71 +63,79 @@ padding-bottom:8px;
 }
 
 /* INPUTS */
-
 input,select{
 width:100%;
 padding:10px;
 margin:8px 0;
-border-radius:6px;
+border-radius:8px;
 border:1px solid #ccc;
-font-size:14px;
+transition:0.2s;
+}
+
+input:focus,select:focus{
+border-color:#0a6ed1;
+outline:none;
+box-shadow:0 0 5px rgba(10,110,209,0.3);
 }
 
 /* BUTTON */
-
 button{
 width:100%;
 padding:12px;
-background:#0a6ed1;
+background:linear-gradient(90deg,#0a6ed1,#0854a0);
 color:white;
 border:none;
-border-radius:6px;
-font-size:15px;
+border-radius:8px;
 cursor:pointer;
+font-weight:500;
+transition:0.3s;
 }
 
 button:hover{
-background:#0854a0;
+transform:scale(1.03);
+box-shadow:0 5px 15px rgba(0,0,0,0.2);
 }
 
-/* RESULT CARDS */
-
+/* RESULT CARD */
 .result-card{
-background:#eef4ff;
+background:white;
 padding:12px;
 margin-top:10px;
-border-radius:6px;
+border-radius:10px;
+box-shadow:0 3px 10px rgba(0,0,0,0.08);
+transition:0.2s;
 }
 
-/* TAGS */
-
-.safe{
-color:green;
-font-weight:bold;
+.result-card:hover{
+transform:scale(1.02);
 }
 
-.target{
-color:#ff9900;
-font-weight:bold;
-}
-
-.dream{
-color:red;
-font-weight:bold;
-}
+/* TAG COLORS */
+.safe{color:green;font-weight:bold;}
+.target{color:#ff9900;font-weight:bold;}
+.dream{color:red;font-weight:bold;}
 
 /* ANALYTICS */
-
 .analytics-box{
-background:#f8f9fc;
-padding:10px;
+background:white;
+padding:12px;
 margin-top:10px;
-border-radius:6px;
+border-radius:8px;
+box-shadow:0 2px 8px rgba(0,0,0,0.08);
 }
 
-/* POPUP */
+/* SUGGESTIONS DROPDOWN */
+#suggestions{
+border-radius:8px;
+overflow:hidden;
+box-shadow:0 4px 10px rgba(0,0,0,0.1);
+position:relative;
+z-index:10;
+}
 
-#trendPopup{
+/* POPUPS (IMPROVED) */
+#trendPopup,
+#explorerPopup{
 display:none;
 position:fixed;
 top:0;
@@ -126,66 +143,173 @@ left:0;
 width:100%;
 height:100%;
 background:rgba(0,0,0,0.6);
+backdrop-filter:blur(5px);
+justify-content:center;
+align-items:center;
+z-index:1000;
+animation:fadeIn 0.3s ease;
+}
+
+#trendPopupContent,
+#explorerPopup > div{
+background:white;
+padding:20px;
+border-radius:12px;
+width:600px;
+max-width:90%;
+animation:slideUp 0.3s ease;
+}
+
+/* COMPARE POPUP */
+#comparePopup{
+animation:slideUp 0.3s ease;
+border-radius:12px;
+}
+
+/* ANIMATIONS */
+@keyframes fadeIn{
+from{opacity:0;}
+to{opacity:1;}
+}
+
+@keyframes slideUp{
+from{transform:translateY(40px);opacity:0;}
+to{transform:translateY(0);opacity:1;}
+}
+/* OVERLAY */
+.compare-modal{
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.6);
+backdrop-filter:blur(6px);
 justify-content:center;
 align-items:center;
 z-index:1000;
 }
 
-#trendPopupContent{
+/* POPUP BOX */
+.compare-box{
 background:white;
+width:800px;
+max-width:95%;
+border-radius:16px;
 padding:20px;
-border-radius:8px;
-width:600px;
-max-width:90%;
+box-shadow:0 20px 60px rgba(0,0,0,0.3);
+animation:popupIn 0.3s ease;
 }
 
+/* HEADER */
+.compare-header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:15px;
+border-bottom:1px solid #eee;
+padding-bottom:10px;
+}
+
+.compare-header h2{
+margin:0;
+font-size:20px;
+}
+
+/* CLOSE BUTTON */
+.close-btn{
+background:red;
+color:white;
+border:none;
+padding:6px 12px;
+border-radius:6px;
+cursor:pointer;
+}
+
+/* CONTENT */
+.compare-content{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:15px;
+margin-bottom:20px;
+}
+
+/* EACH COLLEGE BLOCK */
+.compare-content h4{
+margin:0;
+color:#0a6ed1;
+}
+
+.compare-content div{
+background:#f8f9fc;
+padding:10px;
+border-radius:8px;
+}
+
+/* CHART AREA */
+.chart-container{
+background:#f4f6f9;
+padding:15px;
+border-radius:10px;
+}
+
+/* ANIMATION */
+@keyframes popupIn{
+from{
+transform:scale(0.9);
+opacity:0;
+}
+to{
+transform:scale(1);
+opacity:1;
+}
+}
 </style>
 
 </head>
 
 <body>
-<div id="comparePopup" style="
-display:none;
-position:fixed;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
-background:white;
-padding:25px;
-border-radius:10px;
-box-shadow:0 5px 25px rgba(0,0,0,0.3);
-width:600px;
-z-index:1000;
-">
+<div id="comparePopup" class="compare-modal">
 
-<h3>College Comparison</h3>
+<div class="compare-box">
 
-<div id="compareResult"></div>
+<!-- HEADER -->
+<div class="compare-header">
+<h2>⚖️ College Comparison</h2>
+<button onclick="closeCompare()" class="close-btn">✕</button>
+</div>
 
+<!-- BODY -->
+<div id="compareResult" class="compare-content"></div>
+
+<!-- CHART -->
+<div class="chart-container">
 <canvas id="compareChart"></canvas>
-
-<br>
-<button onclick="closeCompare()">Close</button>
+</div>
 
 </div>
+</div>
+
 <header>TS EAMCET Smart College Predictor</header>
 
 <div class="container">
-<!-- PREDICTION CARD -->
 
+<!-- LEFT: PREDICTION -->
 <div class="card">
 
-<h3>College Prediction</h3>
+<h3>🎯 College Prediction</h3>
+
 <input id="collegeSearch"
 placeholder="Search College..."
 oninput="suggestColleges()">
+
 <button onclick="searchCollege()">Search</button>
 
 <div id="suggestions"
 style="background:white;border:1px solid #ccc;"></div>
 
 <input id="rank" placeholder="Enter EAMCET Rank">
-
 
 <select id="gender">
 <option value="M">Male</option>
@@ -211,11 +335,15 @@ style="background:white;border:1px solid #ccc;"></div>
 </select>
 
 <button onclick="predict()">Predict Colleges</button>
-<h1></h1>
 
 <div id="counselingResult"></div>
-<h1></h1>
-<h3>College Compare</h3>
+
+</div>
+
+<!-- MIDDLE: COMPARE -->
+<div class="card">
+
+<h3>⚖️ College Compare</h3>
 
 <select id="college1">
 <option value="">Select College 1</option>
@@ -227,11 +355,14 @@ style="background:white;border:1px solid #ccc;"></div>
 
 <button onclick="compareColleges()">Compare</button>
 
+</div>
 
+<!-- RIGHT: RESULTS + GRAPH -->
+<div class="card">
+
+<h3>📊 Results</h3>
 
 <div id="results"></div>
-
-<!-- Trend Graph (kept original, not removed) -->
 
 <div style="margin-top:20px">
 <canvas id="trendChart"></canvas>
@@ -239,18 +370,18 @@ style="background:white;border:1px solid #ccc;"></div>
 
 </div>
 
-<!-- ANALYTICS CARD -->
+</div>
 
+<!-- ANALYTICS (FULL WIDTH BELOW) -->
+<div style="padding:20px">
 <div class="card">
 
-<h3>Dataset Insights</h3>
+<h3>📈 Dataset Insights</h3>
 
 <div id="insights"></div>
 
 </div>
-
 </div>
-
 
 <!-- POPUP TREND GRAPH -->
 
@@ -621,15 +752,17 @@ let data=await response.json();
 
 document.getElementById("comparePopup").style.display="block";
 
-let html=`
+let html = `
 
+<div>
 <h4>${data.college1.college}</h4>
-Branches: ${data.college1.branches.join(" | ")}
+<p><b>Branches:</b><br>${data.college1.branches.join("<br>")}</p>
+</div>
 
-<br><br>
-
+<div>
 <h4>${data.college2.college}</h4>
-Branches: ${data.college2.branches.join(" | ")}
+<p><b>Branches:</b><br>${data.college2.branches.join("<br>")}</p>
+</div>
 
 `;
 
