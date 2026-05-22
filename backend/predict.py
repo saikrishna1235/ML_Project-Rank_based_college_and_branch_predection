@@ -2,7 +2,7 @@ import joblib
 import numpy as np
 import pandas as pd
 import re
-
+import os
 # -----------------------------
 
 # Load Model and Encoders
@@ -31,17 +31,18 @@ def clean_college_branch(text):
     text = " ".join(clean_words)
 
     return text.strip()
-model = joblib.load("model/eamcet_model.pkl")
-encoders = joblib.load("model/encoder.pkl")
-target_encoder = joblib.load("model/target_encoder.pkl")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# -----------------------------
+model_path = os.path.join(BASE_DIR, "model", "eamcet_model.pkl")
+encoder_path = os.path.join(BASE_DIR, "model", "encoder.pkl")
+target_encoder_path = os.path.join(BASE_DIR, "model", "target_encoder.pkl")
+dataset_path = os.path.join(BASE_DIR, "dataset", "ts_eapcet_all_data.csv")
 
-# Load Dataset for Cutoff Logic
+model = joblib.load(model_path)
+encoders = joblib.load(encoder_path)
+target_encoder = joblib.load(target_encoder_path)
 
-# -----------------------------
-
-df = pd.read_csv("dataset/ts_eapcet_all_data.csv", low_memory=False)
+df = pd.read_csv(dataset_path, low_memory=False)
 df["College Name"] = df["College Name"].apply(clean_college_branch)
 # Calculate historical closing ranks
 
